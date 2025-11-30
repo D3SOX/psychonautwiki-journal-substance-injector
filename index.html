@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journal Substance Injector</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Substance Injector">
+  <meta name="application-name" content="Substance Injector">
+  <meta name="description" content="Inject substances into PsychonautWiki Journal exports">
+  
+  <!-- Inline PWA Manifest -->
+  <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Journal%20Substance%20Injector%22%2C%22short_name%22%3A%22JSI%22%2C%22description%22%3A%22Inject%20substances%20into%20PsychonautWiki%20Journal%20exports%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0f%22%2C%22theme_color%22%3A%22%230a0a0f%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%2520viewBox%3D%270%25200%2520100%2520100%27%253E%253Crect%2520fill%3D%27%25230a0a0f%27%2520width%3D%27100%27%2520height%3D%27100%27%2520rx%3D%2720%27%2F%253E%253Ctext%2520x%3D%2750%27%2520y%3D%2768%27%2520font-size%3D%2755%27%2520text-anchor%3D%27middle%27%253E%25F0%259F%2592%2589%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a0f' width='100' height='100' rx='20'/><text x='50' y='68' font-size='55' text-anchor='middle'>💉</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;600&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-input: #1a1a24;
+      --border: #2a2a3a;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+    
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+      background-image: 
+        radial-gradient(ellipse at top, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .tagline {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    
+    .tagline-sub {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+    
+    .tagline em {
+      color: var(--success);
+      font-style: normal;
+      font-weight: 600;
+    }
+    
+    .tagline a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--accent);
+      transition: all 0.2s ease;
+    }
+    
+    .tagline a:hover {
+      color: var(--accent-hover);
+      border-bottom-style: solid;
+    }
+    
+    .tagline-note {
+      display: inline-block;
+      margin-top: 0.25rem;
+      color: var(--warning);
+      opacity: 0.9;
+    }
+    
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .card-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.05);
+    }
+    
+    .dropzone-text {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    
+    .dropzone-text strong {
+      color: var(--accent);
+    }
+    
+    .file-input {
+      display: none;
+    }
+    
+    .file-loaded {
+      color: var(--success);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    
+    .substance-select {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    
+    select, input[type="text"] {
+      flex: 1;
+      min-width: 150px;
+      padding: 0.75rem 1rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: border-color 0.2s ease;
+    }
+    
+    select:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    input[type="text"]::placeholder {
+      color: var(--text-muted);
+    }
+    
+    .or-divider {
+      display: flex;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    
+    .stats-list {
+      list-style: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    
+    .stats-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .stats-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .stats-list .rank {
+      color: var(--text-muted);
+      margin-right: 0.5rem;
+    }
+    
+    .stats-list .count {
+      color: var(--accent);
+    }
+    
+    .stats-list .highlight {
+      color: var(--success);
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-success:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .status-message {
+      text-align: center;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    
+    .status-success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+    
+    .info-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+    
+    .explainer {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+    
+    .explainer strong {
+      color: var(--text);
+    }
+    
+    .explainer em {
+      color: var(--accent);
+      font-style: normal;
+    }
+    
+    .explainer ol {
+      margin: 0.75rem 0 0 0;
+      padding-left: 1.5rem;
+    }
+    
+    .explainer li {
+      margin-bottom: 0.25rem;
+    }
+    
+    .explainer li::marker {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .clearfix {
+      clear: both;
+      height: 0.5rem;
+    }
+    
+    .injection-preview {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid var(--warning);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-top: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--warning);
+    }
+    
+    .injection-preview .count {
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .privacy-notice {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2rem;
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    
+    .privacy-notice svg {
+      vertical-align: middle;
+      margin-right: 0.25rem;
+    }
+    
+    .privacy-notice .source-hint {
+      display: block;
+      margin-top: 0.5rem;
+      opacity: 0.8;
+    }
+    
+    .privacy-notice kbd {
+      display: inline-block;
+      padding: 0.1rem 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 1px 0 var(--border);
+    }
+    
+    /* Validation toggle styles */
+    .validation-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--border);
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text);
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: var(--accent);
+    }
+    
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+    
+    .toggle-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    
+    .toggle-label strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    /* Validation status styles */
+    .validation-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .validation-status.loading {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    
+    .validation-status.valid {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+    
+    .validation-status.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid var(--warning);
+      color: var(--warning);
+    }
+    
+    .validation-status.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    
+    .validation-status .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .use-canonical-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: inherit;
+      cursor: pointer;
+      margin-left: 0.5rem;
+      transition: background 0.2s;
+    }
+    
+    .use-canonical-btn:hover {
+      background: var(--accent-hover);
+    }
+    
+    /* Update notification banner */
+    .update-banner {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateX(-50%) translateY(100%); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+    
+    .update-banner span {
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    
+    .update-banner button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .update-banner button:hover {
+      background: var(--accent-hover);
+    }
+    
+    /* Install PWA banner */
+    .install-banner {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(18, 18, 26, 0.85) 0%, rgba(99, 102, 241, 0.2) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: calc(100vw - 2rem);
+    }
+    
+    .install-banner .install-icon {
+      font-size: 1.75rem;
+      flex-shrink: 0;
+    }
+    
+    .install-banner .install-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .install-banner .install-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+    
+    .install-banner .install-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    
+    .install-banner .install-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    
+    .install-banner .btn-install {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .install-banner .btn-install:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+    
+    .install-banner .btn-dismiss {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .install-banner .btn-dismiss:hover {
+      background: var(--bg-input);
+      color: var(--text);
+    }
+    
+    @media (max-width: 500px) {
+      .install-banner {
+        flex-wrap: wrap;
+        padding: 0.875rem 1rem;
+      }
+      
+      .install-banner .install-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+      
+      .install-banner .btn-install {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PsychonautWiki Journal Substance Injector</h1>
+    
+    <p class="tagline">
+      Built because I refuse to pay for software that <a href="https://github.com/isaakhanimann/psychonautwiki-journal-android/commit/1a194a5e6d2a878ce642fa8be711dbb8182fb699" target="_blank" rel="noopener">abandoned its FOSS roots for proprietary monetization</a> and should be <strong>free software</strong> because it handles <strong>extremely sensitive data</strong>.<br>
+      <span class="tagline-sub">Free software <em>can</em> be monetized without stripping user freedoms — 
+      <a href="https://www.gnu.org/philosophy/selling.html" target="_blank" rel="noopener">GNU (supported by the FSF) agrees</a>.<br>
+      <span class="tagline-note">I tried downgrading to the last FOSS version but the JSON import fails, so you can't even use your data with it once you upgrade. This makes it even more hilarious.</span></span>
+      I'll <strong>happily financially support</strong> the project the moment it's <a href="https://www.gnu.org/philosophy/free-sw.en.html" target="_blank" rel="noopener"><strong>free software</strong></a> again.<br>
+    </p>
+    
+    <div class="explainer">
+      <strong>How it works:</strong> Later versions of the journal app only allow you to select your 3 most-used substances when logging. 
+      This tool <em>dynamically calculates</em> how many entries are needed to guarantee your chosen substance reaches the <em>top 3</em>, then injects fake entries into past years starting from 2005 spreading them out evenly.
+      <strong>You can still log any dose or administration route</strong> — the fake entries just boost the count.
+      Fake entries are clearly tagged and will be <em>automatically replaced</em> when you run this tool again.
+      <div class="clearfix"></div>
+      <strong>How to use this tool:</strong>
+      <ol>
+        <li>Go to app setings and tap on the <strong>Export File</strong> button</li>
+        <li>Upload the exported Journal.json file</li>
+        <li>Select a substance from the dropdown or type a custom substance</li>
+        <li>Tap on <strong>Inject Substance</strong> to inject the substance into the journal</li>
+        <li>Tap on <strong>Download Modified JSON</strong> to download the modified Journal.json file</li>
+        <li>Use the <strong>Delete everything</strong> option in the app to delete all your entries</li>
+        <li>Tap on <strong>Import File</strong> in the app and select the downloaded modified JSON file</li>
+      </ol>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">1. Upload Journal</div>
+      <div class="dropzone" id="dropzone">
+        <input type="file" class="file-input" id="fileInput" accept=".json">
+        <p class="dropzone-text" id="dropzoneText">
+          <strong>Click to upload</strong> or drag and drop<br>
+          JSON file only
+        </p>
+      </div>
+    </div>
+    
+    <div class="card hidden" id="substanceCard">
+      <div class="card-title">2. Select Substance</div>
+      <div class="substance-select">
+        <select id="substanceDropdown">
+          <option value="">-- Select from journal --</option>
+        </select>
+        <span class="or-divider">or</span>
+        <input type="text" id="customSubstance" placeholder="Type custom substance" autocomplete="off">
+      </div>
+      <p class="info-text">Select a substance to see how many entries will be injected to reach the top 3.</p>
+      <div class="validation-toggle hidden" id="validationToggle">
+        <label class="toggle-switch">
+          <input type="checkbox" id="enableValidation">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">
+          <strong>Validate via PsychonautWiki</strong><br>
+          Connect to psychonautwiki.org to verify substance names and correct casing. This is the only feature that requires an active internet connection.
+        </span>
+      </div>
+      <div class="validation-status hidden" id="validationStatus"></div>
+      <div class="injection-preview hidden" id="injectionPreview"></div>
+    </div>
+    
+    <div class="card hidden" id="statsCard">
+      <div class="card-title">Current Top Substances</div>
+      <ul class="stats-list" id="statsList"></ul>
+    </div>
+    
+    <div class="card hidden" id="actionCard">
+      <button class="btn btn-primary" id="injectBtn" disabled>Inject Substance</button>
+    </div>
+    
+    <div class="status-message status-success hidden" id="statusMessage"></div>
+    
+    <div class="card hidden" id="downloadCard">
+      <div class="card-title">Updated Top Substances</div>
+      <ul class="stats-list" id="updatedStatsList"></ul>
+      <button class="btn btn-success" id="downloadBtn" style="margin-top: 1rem;">Download Modified JSON</button>
+    </div>
+    
+    <p class="privacy-notice">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      This tool runs entirely in your browser. Your data never leaves your device — works offline once loaded.<br>
+      <span class="source-hint">We don't only say that but you can also easily verify it (This is not the case with the Journal app anymore). The source code is not obfuscated in any way — press <kbd>Ctrl</kbd>+<kbd>U</kbd> to view it. (Desktop only)</span>
+    </p>
+  </div>
+
+  <script>
+    let journalData = null;
+    let modifiedData = null;
+    let uploadedFileName = null;
+    let injectedSubstance = null;
+    let validationEnabled = localStorage.getItem('pwiki_validation') === 'true';
+    let validationCache = {}; // Cache validation results
+    let currentValidation = null; // Track current validation request
+    let validatedSubstanceName = null; // Store the validated canonical name
+    let validationToggleShown = false; // Track if toggle has been shown
+    
+    // Marker to identify fake injected entries
+    const INJECTED_MARKER = '[INJECTED_BY_SUBSTANCE_INJECTOR]';
+    
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const dropzoneText = document.getElementById('dropzoneText');
+    const substanceCard = document.getElementById('substanceCard');
+    const substanceDropdown = document.getElementById('substanceDropdown');
+    const customSubstance = document.getElementById('customSubstance');
+    const statsCard = document.getElementById('statsCard');
+    const statsList = document.getElementById('statsList');
+    const actionCard = document.getElementById('actionCard');
+    const injectBtn = document.getElementById('injectBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const downloadCard = document.getElementById('downloadCard');
+    const updatedStatsList = document.getElementById('updatedStatsList');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const injectionPreview = document.getElementById('injectionPreview');
+    const validationToggle = document.getElementById('validationToggle');
+    const enableValidation = document.getElementById('enableValidation');
+    const validationStatus = document.getElementById('validationStatus');
+    
+    // Dropzone events
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFile(file);
+    });
+    
+    // Initialize validation checkbox from localStorage
+    enableValidation.checked = validationEnabled;
+    
+    // If validation is already enabled, show toggle immediately
+    if (validationEnabled) {
+      validationToggleShown = true;
+      validationToggle.classList.remove('hidden');
+    }
+    
+    // Validation toggle event
+    enableValidation.addEventListener('change', (e) => {
+      validationEnabled = e.target.checked;
+      localStorage.setItem('pwiki_validation', validationEnabled ? 'true' : 'false');
+      validationCache = {}; // Clear cache when toggling
+      validatedSubstanceName = null;
+      validationStatus.classList.add('hidden');
+      // Re-run validation if substance is already selected
+      updateInjectButton();
+    });
+    
+    // Show validation toggle on first interaction with custom substance field
+    // and reset dropdown/validation state when focusing
+    customSubstance.addEventListener('focus', () => {
+      // Only reset if dropdown had a selection (switching from dropdown to custom)
+      if (substanceDropdown.value) {
+        substanceDropdown.value = '';
+        validatedSubstanceName = null;
+        validationStatus.classList.add('hidden');
+        injectionPreview.classList.add('hidden');
+        injectBtn.disabled = true;
+      }
+      if (!validationToggleShown) {
+        validationToggleShown = true;
+        validationToggle.classList.remove('hidden');
+      }
+    });
+    
+    // Validate substance name via PsychonautWiki MediaWiki API
+    async function validateSubstance(name) {
+      // Check cache first
+      if (validationCache[name.toLowerCase()]) {
+        return validationCache[name.toLowerCase()];
+      }
+      
+      try {
+        const url = `https://psychonautwiki.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&redirects&format=json&origin=*`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        let result;
+        const pages = data.query?.pages || {};
+        const pageIds = Object.keys(pages);
+        
+        // Check if page exists (pageid -1 means missing)
+        if (pageIds.length === 0 || pages[pageIds[0]]?.missing !== undefined) {
+          // Page doesn't exist
+          result = { valid: false, canonicalName: null, error: null };
+        } else {
+          // Page exists, get canonical title (after redirects)
+          const canonicalName = pages[pageIds[0]].title;
+          result = { valid: true, canonicalName, error: null };
+        }
+        
+        // Cache the result
+        validationCache[name.toLowerCase()] = result;
+        return result;
+      } catch (err) {
+        // Network error or CORS issue
+        return { valid: false, canonicalName: null, error: err.message };
+      }
+    }
+    
+    // Show validation status UI
+    function showValidationStatus(state, message, canonicalName = null) {
+      validationStatus.className = 'validation-status ' + state;
+      
+      let html = '';
+      if (state === 'loading') {
+        html = `<span class="spinner"></span> ${message}`;
+      } else if (state === 'valid' && canonicalName) {
+        const substance = getSelectedSubstance();
+        if (canonicalName !== substance) {
+          html = `✓ Found as "<strong>${canonicalName}</strong>"`;
+          html += `<button class="use-canonical-btn" onclick="useCanonicalName('${canonicalName.replace(/'/g, "\\'")}')">Use this</button>`;
+        } else {
+          html = `✓ ${message}`;
+        }
+      } else {
+        html = message;
+      }
+      
+      validationStatus.innerHTML = html;
+      validationStatus.classList.remove('hidden');
+    }
+    
+    // Use the canonical name from PsychonautWiki
+    function useCanonicalName(name) {
+      customSubstance.value = name;
+      substanceDropdown.value = '';
+      validatedSubstanceName = name;
+      updateInjectButton();
+    }
+    
+    function handleFile(file) {
+      if (!file.name.endsWith('.json')) {
+        alert('Please upload a JSON file');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          journalData = JSON.parse(e.target.result);
+          // Store filename without .json extension
+          uploadedFileName = file.name.replace(/\.json$/i, '');
+          dropzoneText.innerHTML = `<span class="file-loaded">✓ ${file.name} loaded</span>`;
+          processJournal();
+        } catch (err) {
+          alert('Invalid JSON file');
+        }
+      };
+      reader.readAsText(file);
+    }
+    
+    // Check if an experience is a fake injected entry
+    function isInjectedEntry(exp) {
+      return exp.text && exp.text.includes(INJECTED_MARKER);
+    }
+    
+    // Remove all previously injected entries from data
+    function removeInjectedEntries(data) {
+      const originalCount = data.experiences.length;
+      data.experiences = data.experiences.filter(exp => !isInjectedEntry(exp));
+      return originalCount - data.experiences.length;
+    }
+    
+    // Count injected entries in data
+    function countInjectedEntries(data) {
+      return (data.experiences || []).filter(isInjectedEntry).length;
+    }
+    
+    function getSubstanceCounts(data, excludeInjected = false) {
+      const counts = {};
+      for (const exp of data.experiences || []) {
+        // Skip injected entries if requested
+        if (excludeInjected && isInjectedEntry(exp)) continue;
+        
+        for (const ing of exp.ingestions || []) {
+          const substance = ing.substanceName;
+          if (substance) {
+            counts[substance] = (counts[substance] || 0) + 1;
+          }
+        }
+      }
+      return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1]);
+    }
+    
+    function processJournal() {
+      // Reset all state from previous session
+      modifiedData = null;
+      injectedSubstance = null;
+      validatedSubstanceName = null;
+      currentValidation = null;
+      
+      // Reset input fields
+      customSubstance.value = '';
+      substanceDropdown.value = '';
+      
+      // Reset UI elements
+      validationStatus.classList.add('hidden');
+      injectionPreview.classList.add('hidden');
+      injectBtn.disabled = true;
+      
+      const counts = getSubstanceCounts(journalData, false);
+      
+      // Populate dropdown
+      substanceDropdown.innerHTML = '<option value="">-- Select from journal --</option>';
+      for (const [substance] of counts) {
+        const option = document.createElement('option');
+        option.value = substance;
+        option.textContent = substance;
+        substanceDropdown.appendChild(option);
+      }
+      
+      // Show stats (with fake entries marked)
+      renderStats(counts, statsList, null, journalData);
+      
+      // Show UI
+      substanceCard.classList.remove('hidden');
+      statsCard.classList.remove('hidden');
+      actionCard.classList.remove('hidden');
+      downloadCard.classList.add('hidden');
+      statusMessage.classList.add('hidden');
+    }
+    
+    // Get fake entry count per substance
+    function getFakeCountsPerSubstance(data) {
+      const fakeCounts = {};
+      for (const exp of data.experiences || []) {
+        if (!isInjectedEntry(exp)) continue;
+        for (const ing of exp.ingestions || []) {
+          const substance = ing.substanceName;
+          if (substance) {
+            fakeCounts[substance] = (fakeCounts[substance] || 0) + 1;
+          }
+        }
+      }
+      return fakeCounts;
+    }
+    
+    function renderStats(counts, container, highlightSubstance = null, data = null) {
+      container.innerHTML = '';
+      const top5 = counts.slice(0, 5);
+      const fakeCounts = data ? getFakeCountsPerSubstance(data) : {};
+      
+      top5.forEach(([substance, count], i) => {
+        const li = document.createElement('li');
+        const isHighlight = substance === highlightSubstance;
+        const fakeCount = fakeCounts[substance] || 0;
+        const fakeLabel = fakeCount > 0 ? ` <span style="color: var(--warning); font-size: 0.75rem;">(${fakeCount} fake)</span>` : '';
+        
+        li.innerHTML = `
+          <span><span class="rank">${i + 1}.</span> ${substance}${fakeLabel}</span>
+          <span class="${isHighlight ? 'highlight' : 'count'}">${count} entries</span>
+        `;
+        container.appendChild(li);
+      });
+    }
+    
+    function getSelectedSubstance() {
+      return customSubstance.value.trim() || substanceDropdown.value;
+    }
+    
+    // Calculate how many entries needed to reach top 3
+    function calculateNeededEntries(substance) {
+      // Get total counts (including fake) to check current position
+      const totalCounts = getSubstanceCounts(journalData, false);
+      const totalCountsMap = Object.fromEntries(totalCounts);
+      
+      // Find current position (1-indexed, 0 if not in list)
+      const currentPosition = totalCounts.findIndex(([s]) => s === substance) + 1;
+      const totalCount = totalCountsMap[substance] || 0;
+      
+      // Get real counts for calculation
+      const realCounts = getSubstanceCounts(journalData, true);
+      const realCountsMap = Object.fromEntries(realCounts);
+      const realCount = realCountsMap[substance] || 0;
+      
+      // Get fake count for this substance
+      const fakeCounts = getFakeCountsPerSubstance(journalData);
+      const fakeCount = fakeCounts[substance] || 0;
+      
+      // Already in top 3 if position is 1, 2, or 3
+      const alreadyInTop3 = currentPosition >= 1 && currentPosition <= 3;
+      
+      // Get the #3 threshold from real counts (what we need to beat)
+      const realTop3Count = realCounts.length >= 3 ? realCounts[2][1] : 0;
+      
+      // Calculate needed: must exceed #3 position based on real entries, with buffer of 10
+      const needed = Math.max(1, (realTop3Count + 10) - realCount);
+      
+      return {
+        needed,
+        realCount,
+        totalCount,
+        fakeCount,
+        realTop3Count,
+        currentPosition,
+        alreadyInTop3,
+        willBeTotal: realCount + needed
+      };
+    }
+    
+    // Enable inject button when substance is selected
+    substanceDropdown.addEventListener('change', () => {
+      customSubstance.value = '';
+      validatedSubstanceName = null;
+      updateInjectButton();
+    });
+    
+    // Debounce timer for custom input
+    let debounceTimer = null;
+    customSubstance.addEventListener('input', () => {
+      validatedSubstanceName = null;
+      // Debounce custom input to avoid too many API calls
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(updateInjectButton, 300);
+    });
+    
+    async function updateInjectButton() {
+      const substance = getSelectedSubstance();
+      
+      if (!substance || !journalData) {
+        injectBtn.disabled = true;
+        injectionPreview.classList.add('hidden');
+        validationStatus.classList.add('hidden');
+        return;
+      }
+      
+      // Run validation if enabled
+      if (validationEnabled) {
+        // Create unique request ID to handle race conditions
+        const requestId = Symbol();
+        currentValidation = requestId;
+        
+        // Show loading state
+        showValidationStatus('loading', 'Validating substance...');
+        injectBtn.disabled = true;
+        
+        const result = await validateSubstance(substance);
+        
+        // Check if this is still the current request
+        if (currentValidation !== requestId) return;
+        
+        if (result.error) {
+          // Network/CORS error - show warning but allow proceeding
+          showValidationStatus('error', `⚠ Could not validate: ${result.error}`);
+          validatedSubstanceName = substance; // Use as-is
+        } else if (!result.valid) {
+          // Substance not found on wiki - warn but allow
+          showValidationStatus('warning', `⚠ "${substance}" not found on PsychonautWiki`);
+          validatedSubstanceName = substance; // Use as-is
+        } else if (result.canonicalName !== substance) {
+          // Found but casing differs
+          showValidationStatus('valid', null, result.canonicalName);
+          validatedSubstanceName = substance; // Keep user's choice until they click "Use this"
+        } else {
+          // Perfect match
+          showValidationStatus('valid', `Verified: ${result.canonicalName}`);
+          validatedSubstanceName = result.canonicalName;
+        }
+      } else {
+        validationStatus.classList.add('hidden');
+        validatedSubstanceName = substance;
+      }
+      
+      // Update injection preview
+      const substanceToUse = validatedSubstanceName || substance;
+      const calc = calculateNeededEntries(substanceToUse);
+      
+      if (calc.alreadyInTop3) {
+        injectBtn.disabled = true;
+        let statusText = `<span style="color: var(--success);">✓ Already #${calc.currentPosition}</span> with <span class="count">${calc.totalCount}</span> entries`;
+        if (calc.fakeCount > 0) {
+          statusText += ` (${calc.realCount} real + ${calc.fakeCount} fake)`;
+        }
+        injectionPreview.innerHTML = statusText;
+        injectionPreview.style.borderColor = 'var(--success)';
+        injectionPreview.style.background = 'rgba(34, 197, 94, 0.1)';
+      } else {
+        injectBtn.disabled = false;
+        // Count total fake entries that will be replaced
+        const totalFakeEntries = countInjectedEntries(journalData);
+        
+        let previewHtml = `Will inject <span class="count">${calc.needed}</span> entries`;
+        if (totalFakeEntries > 0) {
+          previewHtml += ` <span style="color: var(--text-muted);">(replacing ${totalFakeEntries} existing fake)</span>`;
+        }
+        previewHtml += `<br>`;
+        previewHtml += calc.realCount > 0 
+          ? `Current real: ${calc.realCount}` 
+          : 'New substance';
+        previewHtml += ` → surpass #3 (${calc.realTop3Count} real entries)`;
+        injectionPreview.innerHTML = previewHtml;
+        injectionPreview.style.borderColor = 'var(--warning)';
+        injectionPreview.style.background = 'rgba(245, 158, 11, 0.1)';
+      }
+      
+      injectionPreview.classList.remove('hidden');
+    }
+    
+    // Inject substance
+    injectBtn.addEventListener('click', () => {
+      const substance = validatedSubstanceName || getSelectedSubstance();
+      if (!substance) return;
+      
+      // Deep clone the data
+      modifiedData = JSON.parse(JSON.stringify(journalData));
+      
+      // Store substance name for download filename
+      injectedSubstance = substance;
+      
+      // Remove any previously injected fake entries first
+      const removedCount = removeInjectedEntries(modifiedData);
+      
+      // Calculate how many entries we need (based on real entries only)
+      const calc = calculateNeededEntries(substance);
+      const entriesToCreate = calc.needed;
+      
+      // Generate entries spread across historical years
+      const newExperiences = generateHistoricalEntries(substance, entriesToCreate);
+      
+      modifiedData.experiences.push(...newExperiences);
+      modifiedData.experiences.sort((a, b) => a.sortDate - b.sortDate);
+      
+      // Show success
+      const counts = getSubstanceCounts(modifiedData);
+      renderStats(counts, updatedStatsList, substance, modifiedData);
+      
+      let statusText = `✓ Injected ${entriesToCreate} entries of "${substance}"`;
+      if (removedCount > 0) {
+        statusText += ` (replaced ${removedCount} old fake entries)`;
+      }
+      statusMessage.textContent = statusText;
+      statusMessage.classList.remove('hidden');
+      downloadCard.classList.remove('hidden');
+    });
+    
+    // Generate historical entries spread across years based on count needed
+    function generateHistoricalEntries(substance, count) {
+      const experiences = [];
+      const doses = [10.0, 15.0, 20.0, 15.0, 10.0, 20.0, 15.0, 20.0, 10.0, 15.0];
+      
+      // Calculate how many years we need to spread entries
+      // ~120 entries per year at every 3 days is safe
+      const entriesPerYear = 120;
+      const yearsNeeded = Math.ceil(count / entriesPerYear);
+      
+      // Start from 2005 and go forward, ensuring we don't overlap recent years
+      const startYear = 2005;
+      const endYear = startYear + yearsNeeded - 1;
+      
+      // Calculate interval between entries to spread evenly
+      const totalDays = yearsNeeded * 365;
+      const intervalDays = Math.max(1, Math.floor(totalDays / count));
+      
+      let currentDate = new Date(startYear, 0, 1, 12, 0, 0);
+      
+      for (let i = 0; i < count; i++) {
+        experiences.push(createExperience(currentDate, substance, doses[i % doses.length]));
+        // Advance by calculated interval
+        currentDate = new Date(currentDate.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+      }
+      
+      return experiences;
+    }
+    
+    function createExperience(date, substance, dose) {
+      const timestamp = date.getTime();
+      const dateStr = date.toLocaleDateString('en-GB', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      
+      return {
+        title: dateStr,
+        text: INJECTED_MARKER,  // Tag to identify fake entries
+        creationDate: timestamp,
+        sortDate: timestamp,
+        isFavorite: false,
+        ingestions: [{
+          substanceName: substance,
+          time: timestamp,
+          endTime: null,
+          creationDate: timestamp,
+          administrationRoute: 'ORAL',
+          dose: dose,
+          isDoseAnEstimate: false,
+          estimatedDoseStandardDeviation: null,
+          units: 'mg',
+          notes: INJECTED_MARKER,  // Also tag the ingestion
+          stomachFullness: null,
+          consumerName: null,
+          customUnitId: null
+        }],
+        location: null,
+        ratings: [],
+        timedNotes: []
+      };
+    }
+    
+    // Download
+    downloadBtn.addEventListener('click', () => {
+      if (!modifiedData) return;
+      
+      const blob = new Blob([JSON.stringify(modifiedData)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${uploadedFileName}_modified_${injectedSubstance}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    
+    // PWA Install Prompt
+    let deferredPrompt = null;
+    const installDismissed = sessionStorage.getItem('pwa_install_dismissed');
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67+ from automatically showing the prompt
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Don't show if user dismissed this session or already installed
+      if (installDismissed) return;
+      
+      showInstallBanner();
+    });
+    
+    function showInstallBanner() {
+      // Don't show if banner already exists
+      if (document.querySelector('.install-banner')) return;
+      
+      const banner = document.createElement('div');
+      banner.className = 'install-banner';
+      banner.innerHTML = `
+        <span class="install-icon">📲</span>
+        <div class="install-content">
+          <div class="install-title">Install Substance Injector</div>
+          <div class="install-subtitle">Works offline • Quick access • No app store</div>
+        </div>
+        <div class="install-actions">
+          <button class="btn-dismiss" id="dismissInstall">Later</button>
+          <button class="btn-install" id="installApp">Install</button>
+        </div>
+      `;
+      document.body.appendChild(banner);
+      
+      // Install button
+      banner.querySelector('#installApp').addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        
+        // Show the install prompt
+        deferredPrompt.prompt();
+        
+        // Wait for user response
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('PWA install outcome:', outcome);
+        
+        // Clear the prompt reference
+        deferredPrompt = null;
+        
+        // Remove banner
+        banner.remove();
+      });
+      
+      // Dismiss button
+      banner.querySelector('#dismissInstall').addEventListener('click', () => {
+        sessionStorage.setItem('pwa_install_dismissed', 'true');
+        banner.remove();
+      });
+    }
+    
+    // Hide banner if PWA is installed
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA installed successfully');
+      deferredPrompt = null;
+      const banner = document.querySelector('.install-banner');
+      if (banner) banner.remove();
+    });
+    
+    // PWA Service Worker Registration with update detection
+    if ('serviceWorker' in navigator) {
+      let refreshing = false;
+      
+      // Reload page when new SW takes control
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+      
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        console.log('SW registered:', reg.scope);
+        
+        // Check for updates periodically (every 60s)
+        setInterval(() => reg.update(), 60000);
+        
+        // Handle updates
+        const showUpdateBanner = (worker) => {
+          const banner = document.createElement('div');
+          banner.className = 'update-banner';
+          banner.innerHTML = `
+            <span>🔄 New version available</span>
+            <button id="updateBtn">Update</button>
+          `;
+          document.body.appendChild(banner);
+          
+          banner.querySelector('#updateBtn').addEventListener('click', () => {
+            worker.postMessage('skipWaiting');
+          });
+        };
+        
+        // New SW waiting after install
+        if (reg.waiting) {
+          showUpdateBanner(reg.waiting);
+        }
+        
+        // New SW installed while page is open
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateBanner(newWorker);
+            }
+          });
+        });
+      }).catch((err) => {
+        console.log('SW registration failed:', err);
+      });
+    }
+  </script>
+</body>
+</html>
+
