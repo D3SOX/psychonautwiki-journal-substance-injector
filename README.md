@@ -33,4 +33,4 @@ This tool runs entirely in your browser. No data is ever sent to any server (exc
 
 ## License
 
-This project is free software. Feel free to use, modify, and distribute it.
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
