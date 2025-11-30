@@ -6,7 +6,7 @@ A browser-based tool to inject substances into [PsychonautWiki Journal](https://
 
 Later versions of the PsychonautWiki Journal app restrict substance selection to your top 3 most-used substances. This tool dynamically calculates how many entries are needed to guarantee your chosen substance reaches the top 3, then injects tagged entries into past years (starting from 2005) spread out evenly.
 
-This project was created because the Journal app [abandoned its FOSS roots for proprietary monetization](https://github.com/isaakhanimann/psychonautwiki-journal-android/commit/1a194a5e6d2a878ce642fa8be711dbb8182fb699). Software handling extremely sensitive personal data should be free software.
+This project was created to protest the Journal app [abandoning its FOSS roots for proprietary monetization](https://github.com/isaakhanimann/psychonautwiki-journal-android/commit/1a194a5e6d2a878ce642fa8be711dbb8182fb699). Software handling extremely sensitive personal data should be free software.
 
 ## Features
 
