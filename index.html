@@ -253,6 +253,16 @@
       transform: translateY(-1px);
     }
     
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+    
+    .btn-danger:hover:not(:disabled) {
+      background: #ef4444;
+      transform: translateY(-1px);
+    }
+    
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -280,6 +290,22 @@
       font-size: 0.8rem;
       color: var(--text-muted);
       margin-top: 0.5rem;
+    }
+    
+    .cleanup-info {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    
+    .cleanup-info strong {
+      color: var(--warning);
+    }
+    
+    #cleanupCard {
+      border-color: rgba(220, 38, 38, 0.3);
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(220, 38, 38, 0.05) 100%);
     }
     
     .explainer {
@@ -667,7 +693,7 @@
       <strong>You can still log any dose or administration route</strong> — the fake entries just boost the count.
       Fake entries are clearly tagged and will be <em>automatically replaced</em> when you run this tool again.
       <div class="clearfix"></div>
-      <strong>How to use this tool:</strong>
+      <strong>How to use:</strong>
       <ol>
         <li>Go to app setings and tap on the <strong>Export File</strong> button</li>
         <li>Upload the exported Journal.json file</li>
@@ -700,14 +726,14 @@
         <input type="text" id="customSubstance" placeholder="Type custom substance" autocomplete="off">
       </div>
       <p class="info-text">Select a substance to see how many entries will be injected to reach the top 3.</p>
-      <div class="validation-toggle hidden" id="validationToggle">
+      <div class="validation-toggle" id="validationToggle">
         <label class="toggle-switch">
           <input type="checkbox" id="enableValidation">
           <span class="toggle-slider"></span>
         </label>
         <span class="toggle-label">
           <strong>Validate via PsychonautWiki</strong><br>
-          Connect to psychonautwiki.org to verify substance names and correct casing. This is the only feature that requires an active internet connection.
+          Verify substance names and correct casing. Requires internet.
         </span>
       </div>
       <div class="validation-status hidden" id="validationStatus"></div>
@@ -717,6 +743,14 @@
     <div class="card hidden" id="statsCard">
       <div class="card-title">Current Top Substances</div>
       <ul class="stats-list" id="statsList"></ul>
+    </div>
+    
+    <div class="card hidden" id="cleanupCard">
+      <div class="card-title">🧹 Cleanup Fake Entries</div>
+      <p class="cleanup-info">
+        <span id="fakeCountInfo"></span>
+      </p>
+      <button class="btn btn-danger" id="removeFakeBtn">Remove All Fake Entries</button>
     </div>
     
     <div class="card hidden" id="actionCard">
@@ -747,7 +781,6 @@
     let validationCache = {}; // Cache validation results
     let currentValidation = null; // Track current validation request
     let validatedSubstanceName = null; // Store the validated canonical name
-    let validationToggleShown = false; // Track if toggle has been shown
     
     // Marker to identify fake injected entries
     const INJECTED_MARKER = '[INJECTED_BY_SUBSTANCE_INJECTOR]';
@@ -770,6 +803,9 @@
     const validationToggle = document.getElementById('validationToggle');
     const enableValidation = document.getElementById('enableValidation');
     const validationStatus = document.getElementById('validationStatus');
+    const cleanupCard = document.getElementById('cleanupCard');
+    const fakeCountInfo = document.getElementById('fakeCountInfo');
+    const removeFakeBtn = document.getElementById('removeFakeBtn');
     
     // Dropzone events
     dropzone.addEventListener('click', () => fileInput.click());
@@ -792,12 +828,6 @@
     // Initialize validation checkbox from localStorage
     enableValidation.checked = validationEnabled;
     
-    // If validation is already enabled, show toggle immediately
-    if (validationEnabled) {
-      validationToggleShown = true;
-      validationToggle.classList.remove('hidden');
-    }
-    
     // Validation toggle event
     enableValidation.addEventListener('change', (e) => {
       validationEnabled = e.target.checked;
@@ -809,8 +839,7 @@
       updateInjectButton();
     });
     
-    // Show validation toggle on first interaction with custom substance field
-    // and reset dropdown/validation state when focusing
+    // Reset dropdown/validation state when focusing custom substance field
     customSubstance.addEventListener('focus', () => {
       // Only reset if dropdown had a selection (switching from dropdown to custom)
       if (substanceDropdown.value) {
@@ -819,10 +848,6 @@
         validationStatus.classList.add('hidden');
         injectionPreview.classList.add('hidden');
         injectBtn.disabled = true;
-      }
-      if (!validationToggleShown) {
-        validationToggleShown = true;
-        validationToggle.classList.remove('hidden');
       }
     });
     
@@ -833,37 +858,76 @@
         return validationCache[name.toLowerCase()];
       }
       
-      try {
-        const url = `https://psychonautwiki.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&redirects&format=json&origin=*`;
-        const response = await fetch(url);
+      const apiUrl = `https://psychonautwiki.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&redirects&format=json&origin=*`;
+      
+      // Try direct first, fall back to proxies if blocked
+      const corsProxies = [
+        (url) => url, // Direct request first
+        (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+      ];
+      
+      let lastError = null;
+      
+      for (const proxyFn of corsProxies) {
+        const url = proxyFn(apiUrl);
         
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout per proxy (fail fast)
+        
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            signal: controller.signal,
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          let result;
+          const pages = data.query?.pages || {};
+          const pageIds = Object.keys(pages);
+          
+          // Check if page exists (pageid -1 means missing)
+          if (pageIds.length === 0 || pages[pageIds[0]]?.missing !== undefined) {
+            // Page doesn't exist
+            result = { valid: false, canonicalName: null, error: null };
+          } else {
+            // Page exists, get canonical title (after redirects)
+            const canonicalName = pages[pageIds[0]].title;
+            result = { valid: true, canonicalName, error: null };
+          }
+          
+          // Cache the result
+          validationCache[name.toLowerCase()] = result;
+          return result;
+          
+        } catch (err) {
+          clearTimeout(timeoutId);
+          // Store error and try next proxy
+          if (err.name === 'AbortError') {
+            lastError = 'Request timed out';
+          } else {
+            lastError = err.message;
+          }
+          // Continue to next proxy
         }
-        
-        const data = await response.json();
-        
-        let result;
-        const pages = data.query?.pages || {};
-        const pageIds = Object.keys(pages);
-        
-        // Check if page exists (pageid -1 means missing)
-        if (pageIds.length === 0 || pages[pageIds[0]]?.missing !== undefined) {
-          // Page doesn't exist
-          result = { valid: false, canonicalName: null, error: null };
-        } else {
-          // Page exists, get canonical title (after redirects)
-          const canonicalName = pages[pageIds[0]].title;
-          result = { valid: true, canonicalName, error: null };
-        }
-        
-        // Cache the result
-        validationCache[name.toLowerCase()] = result;
-        return result;
-      } catch (err) {
-        // Network error or CORS issue
-        return { valid: false, canonicalName: null, error: err.message };
       }
+      
+      // All proxies failed
+      return { valid: false, canonicalName: null, error: lastError || 'All proxies failed' };
     }
     
     // Show validation status UI
@@ -875,11 +939,27 @@
         html = `<span class="spinner"></span> ${message}`;
       } else if (state === 'valid' && canonicalName) {
         const substance = getSelectedSubstance();
-        if (canonicalName !== substance) {
+        // Check if canonical name is deprecated in the Journal app
+        const deprecatedInfo = checkSubstanceRenameWarning(canonicalName);
+        
+        if (deprecatedInfo) {
+          // Canonical name is deprecated, suggest the new name instead
+          const correctName = deprecatedInfo.newName;
+          if (correctName.toLowerCase() !== substance.toLowerCase()) {
+            html = `✓ Found, use correct casing:`;
+            html += `<button class="use-canonical-btn" onclick="useCanonicalName('${correctName.replace(/'/g, "\\'")}')">Use "${correctName}"</button>`;
+          } else if (correctName !== substance) {
+            // Same name but wrong casing
+            html = `✓ Fix casing:`;
+            html += `<button class="use-canonical-btn" onclick="useCanonicalName('${correctName.replace(/'/g, "\\'")}')">Use "${correctName}"</button>`;
+          } else {
+            html = `✓ Verified: ${substance}`;
+          }
+        } else if (canonicalName !== substance) {
           html = `✓ Found as "<strong>${canonicalName}</strong>"`;
           html += `<button class="use-canonical-btn" onclick="useCanonicalName('${canonicalName.replace(/'/g, "\\'")}')">Use this</button>`;
         } else {
-          html = `✓ ${message}`;
+          html = `✓ ${message || 'Verified: ' + canonicalName}`;
         }
       } else {
         html = message;
@@ -919,8 +999,17 @@
     }
     
     // Check if an experience is a fake injected entry
+    // Check both old format (marker in text) and new format (marker in ingestion notes only)
     function isInjectedEntry(exp) {
-      return exp.text && exp.text.includes(INJECTED_MARKER);
+      // Old format: marker in experience text
+      if (exp.text && exp.text.includes(INJECTED_MARKER)) {
+        return true;
+      }
+      // New format: marker only in ingestion notes, with empty experience text
+      if (exp.ingestions && exp.ingestions.length > 0) {
+        return exp.ingestions.some(ing => ing.notes && ing.notes.includes(INJECTED_MARKER));
+      }
+      return false;
     }
     
     // Remove all previously injected entries from data
@@ -981,6 +1070,19 @@
       
       // Show stats (with fake entries marked)
       renderStats(counts, statsList, null, journalData);
+      
+      // Check for existing fake entries and show cleanup option
+      const fakeEntryCount = countInjectedEntries(journalData);
+      if (fakeEntryCount > 0) {
+        const fakeCounts = getFakeCountsPerSubstance(journalData);
+        const fakeSubstances = Object.entries(fakeCounts)
+          .map(([name, count]) => `${name} (${count})`)
+          .join(', ');
+        fakeCountInfo.innerHTML = `Found <strong>${fakeEntryCount}</strong> fake entries: ${fakeSubstances}.<br>Remove them to get a clean journal.`;
+        cleanupCard.classList.remove('hidden');
+      } else {
+        cleanupCard.classList.add('hidden');
+      }
       
       // Show UI
       substanceCard.classList.remove('hidden');
@@ -1084,6 +1186,41 @@
       debounceTimer = setTimeout(updateInjectButton, 300);
     });
     
+    // Substance name changes/aliases that users should know about
+    const SUBSTANCE_RENAME_WARNINGS = {
+      'cannabis': {
+        newName: 'THC',
+        message: '⚠️ "Cannabis" was renamed to "THC" in recent app versions.'
+      },
+      'psilocybin mushrooms': {
+        newName: 'Psilocybin',
+        message: '⚠️ "Psilocybin mushrooms" was renamed to "Psilocybin" in recent app versions.'
+      }
+    };
+    
+    // Use the corrected substance name from a rename warning
+    function useCorrectSubstanceName(newName) {
+      customSubstance.value = newName;
+      substanceDropdown.value = '';
+      updateInjectButton();
+    }
+    
+    function checkSubstanceRenameWarning(substance) {
+      const key = substance.toLowerCase();
+      return SUBSTANCE_RENAME_WARNINGS[key] || null;
+    }
+    
+    // Find correct casing for known renamed substances (checks newName values)
+    function findKnownSubstanceCasing(substance) {
+      const lowerSubstance = substance.toLowerCase();
+      for (const info of Object.values(SUBSTANCE_RENAME_WARNINGS)) {
+        if (info.newName.toLowerCase() === lowerSubstance) {
+          return info.newName; // Return correctly cased new name
+        }
+      }
+      return null;
+    }
+    
     async function updateInjectButton() {
       const substance = getSelectedSubstance();
       
@@ -1091,6 +1228,18 @@
         injectBtn.disabled = true;
         injectionPreview.classList.add('hidden');
         validationStatus.classList.add('hidden');
+        return;
+      }
+      
+      // Check for substance rename warnings
+      const renameWarning = checkSubstanceRenameWarning(substance);
+      if (renameWarning) {
+        validationStatus.classList.add('hidden');  // Hide validation when showing rename warning
+        injectionPreview.innerHTML = `${renameWarning.message} <button class="use-canonical-btn" onclick="useCorrectSubstanceName('${renameWarning.newName}')">Use "${renameWarning.newName}"</button>`;
+        injectionPreview.style.borderColor = '#f59e0b';
+        injectionPreview.style.background = 'rgba(245, 158, 11, 0.15)';
+        injectionPreview.classList.remove('hidden');
+        injectBtn.disabled = true;
         return;
       }
       
@@ -1110,13 +1259,25 @@
         if (currentValidation !== requestId) return;
         
         if (result.error) {
-          // Network/CORS error - show warning but allow proceeding
-          showValidationStatus('error', `⚠ Could not validate: ${result.error}`);
-          validatedSubstanceName = substance; // Use as-is
+          // Network/CORS error - check for known renames, then allow proceeding
+          const knownRename = findKnownSubstanceCasing(substance);
+          if (knownRename && knownRename !== substance) {
+            showValidationStatus('warning', `⚠ Offline - fix casing: <button class="use-canonical-btn" onclick="useCanonicalName('${knownRename.replace(/'/g, "\\'")}')">Use "${knownRename}"</button>`);
+            validatedSubstanceName = substance;
+          } else {
+            showValidationStatus('error', `⚠ Could not validate: ${result.error}`);
+            validatedSubstanceName = substance; // Use as-is
+          }
         } else if (!result.valid) {
-          // Substance not found on wiki - warn but allow
-          showValidationStatus('warning', `⚠ "${substance}" not found on PsychonautWiki`);
-          validatedSubstanceName = substance; // Use as-is
+          // Substance not found on wiki - check for known renames, then allow
+          const knownRename = findKnownSubstanceCasing(substance);
+          if (knownRename && knownRename !== substance) {
+            showValidationStatus('warning', `Fix casing: <button class="use-canonical-btn" onclick="useCanonicalName('${knownRename.replace(/'/g, "\\'")}')">Use "${knownRename}"</button>`);
+            validatedSubstanceName = substance;
+          } else {
+            showValidationStatus('warning', `⚠ "${substance}" not found on PsychonautWiki`);
+            validatedSubstanceName = substance; // Use as-is
+          }
         } else if (result.canonicalName !== substance) {
           // Found but casing differs
           showValidationStatus('valid', null, result.canonicalName);
@@ -1278,6 +1439,50 @@
       a.download = `${uploadedFileName}_modified_${injectedSubstance}.json`;
       a.click();
       URL.revokeObjectURL(url);
+    });
+    
+    // Remove all fake entries
+    removeFakeBtn.addEventListener('click', () => {
+      if (!journalData) return;
+      
+      // Deep clone the data
+      const cleanedData = JSON.parse(JSON.stringify(journalData));
+      
+      // Remove fake entries
+      const removedCount = removeInjectedEntries(cleanedData);
+      
+      if (removedCount === 0) {
+        alert('No fake entries found to remove.');
+        return;
+      }
+      
+      // Download cleaned file
+      const blob = new Blob([JSON.stringify(cleanedData)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${uploadedFileName}_cleaned.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      // Update UI
+      statusMessage.textContent = `✓ Removed ${removedCount} fake entries. Clean file downloaded.`;
+      statusMessage.classList.remove('hidden');
+      cleanupCard.classList.add('hidden');
+      
+      // Refresh stats with cleaned data
+      journalData = cleanedData;
+      const counts = getSubstanceCounts(journalData);
+      renderStats(counts, statsList, null, journalData);
+      
+      // Update dropdown
+      substanceDropdown.innerHTML = '<option value="">-- Select from journal --</option>';
+      for (const [substance] of counts) {
+        const option = document.createElement('option');
+        option.value = substance;
+        option.textContent = substance;
+        substanceDropdown.appendChild(option);
+      }
     });
     
     // PWA Install Prompt
