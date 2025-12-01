@@ -1078,7 +1078,7 @@
         const fakeSubstances = Object.entries(fakeCounts)
           .map(([name, count]) => `${name} (${count})`)
           .join(', ');
-        fakeCountInfo.innerHTML = `Found <strong>${fakeEntryCount}</strong> fake entries: ${fakeSubstances}.<br>Remove them to get a clean journal.`;
+        fakeCountInfo.innerHTML = `Found <strong>${fakeEntryCount}</strong> fake entries: ${fakeSubstances}.<br>Remove them to get a clean journal. This will restore your actual current top 3 substances.`;
         cleanupCard.classList.remove('hidden');
       } else {
         cleanupCard.classList.add('hidden');
