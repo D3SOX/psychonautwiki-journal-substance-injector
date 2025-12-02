@@ -862,17 +862,18 @@
       const apiUrl = `https://psychonautwiki.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&redirects&format=json&origin=*`;
       
       // Try direct first, fall back to proxies if blocked
+      // Proxy configs: { url: function, unwrap: function to extract actual response }
       const corsProxies = [
-        (url) => url, // Direct request first
-        (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-        (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+        { url: (u) => u }, // Direct request
+        { url: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}` },
+        { url: (u) => `https://whateverorigin.org/get?url=${encodeURIComponent(u)}`, unwrap: (d) => JSON.parse(d.contents) },
+        { url: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}` }
       ];
       
       let lastError = null;
       
-      for (const proxyFn of corsProxies) {
-        const url = proxyFn(apiUrl);
+      for (const proxy of corsProxies) {
+        const url = proxy.url(apiUrl);
         
         // Create abort controller for timeout
         const controller = new AbortController();
@@ -895,7 +896,12 @@
             throw new Error(`HTTP ${response.status}`);
           }
           
-          const data = await response.json();
+          let data = await response.json();
+          
+          // Unwrap if proxy wraps response (e.g., whateverorigin returns {contents: "..."})
+          if (proxy.unwrap) {
+            data = proxy.unwrap(data);
+          }
           
           let result;
           const pages = data.query?.pages || {};

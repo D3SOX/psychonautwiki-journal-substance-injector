@@ -1,4 +1,4 @@
-const CACHE_NAME = 'substance-injector-v15';
+const CACHE_NAME = 'substance-injector-v16';
 const ASSETS = [
   './',
   './index.html'
