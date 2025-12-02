@@ -773,6 +773,28 @@
     </p>
   </div>
 
+  <!-- Templates for dynamically created UI elements -->
+  <template id="installBannerTemplate">
+    <div class="install-banner">
+      <span class="install-icon">📲</span>
+      <div class="install-content">
+        <div class="install-title">Install Substance Injector</div>
+        <div class="install-subtitle">Works offline • Quick access • No app store</div>
+      </div>
+      <div class="install-actions">
+        <button class="btn-dismiss" data-action="dismiss">Later</button>
+        <button class="btn-install" data-action="install">Install</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="updateBannerTemplate">
+    <div class="update-banner">
+      <span>🔄 New version available</span>
+      <button data-action="update">Update</button>
+    </div>
+  </template>
+
   <script>
     let journalData = null;
     let modifiedData = null;
@@ -1527,23 +1549,12 @@
       // Don't show if banner already exists
       if (document.querySelector('.install-banner')) return;
       
-      const banner = document.createElement('div');
-      banner.className = 'install-banner';
-      banner.innerHTML = `
-        <span class="install-icon">📲</span>
-        <div class="install-content">
-          <div class="install-title">Install Substance Injector</div>
-          <div class="install-subtitle">Works offline • Quick access • No app store</div>
-        </div>
-        <div class="install-actions">
-          <button class="btn-dismiss" id="dismissInstall">Later</button>
-          <button class="btn-install" id="installApp">Install</button>
-        </div>
-      `;
-      document.body.appendChild(banner);
+      const template = document.getElementById('installBannerTemplate');
+      const clone = template.content.cloneNode(true);
+      const banner = clone.querySelector('.install-banner');
       
       // Install button
-      banner.querySelector('#installApp').addEventListener('click', async () => {
+      banner.querySelector('[data-action="install"]').addEventListener('click', async () => {
         if (!deferredPrompt) return;
         
         // Show the install prompt
@@ -1561,10 +1572,12 @@
       });
       
       // Dismiss button
-      banner.querySelector('#dismissInstall').addEventListener('click', () => {
+      banner.querySelector('[data-action="dismiss"]').addEventListener('click', () => {
         sessionStorage.setItem('pwa_install_dismissed', 'true');
         banner.remove();
       });
+      
+      document.body.appendChild(clone);
     }
     
     // Hide banner if PWA is installed
@@ -1595,17 +1608,15 @@
         
         // Handle updates
         const showUpdateBanner = (worker) => {
-          const banner = document.createElement('div');
-          banner.className = 'update-banner';
-          banner.innerHTML = `
-            <span>🔄 New version available</span>
-            <button id="updateBtn">Update</button>
-          `;
-          document.body.appendChild(banner);
+          const template = document.getElementById('updateBannerTemplate');
+          const clone = template.content.cloneNode(true);
+          const banner = clone.querySelector('.update-banner');
           
-          banner.querySelector('#updateBtn').addEventListener('click', () => {
+          banner.querySelector('[data-action="update"]').addEventListener('click', () => {
             worker.postMessage('skipWaiting');
           });
+          
+          document.body.appendChild(clone);
         };
         
         // New SW waiting after install
