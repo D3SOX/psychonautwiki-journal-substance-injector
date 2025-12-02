@@ -535,16 +535,19 @@
       bottom: 1rem;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--bg-card);
+      background: linear-gradient(135deg, rgba(18, 18, 26, 0.85) 0%, rgba(99, 102, 241, 0.2) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--accent);
-      border-radius: 10px;
-      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
       display: flex;
       align-items: center;
       gap: 1rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
       z-index: 1000;
-      animation: slideUp 0.3s ease;
+      animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: calc(100vw - 2rem);
     }
     
     @keyframes slideUp {
@@ -553,7 +556,8 @@
     }
     
     .update-banner span {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      font-weight: 600;
       color: var(--text);
     }
     
@@ -561,17 +565,19 @@
       background: var(--accent);
       color: white;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
       font-family: inherit;
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      white-space: nowrap;
     }
     
     .update-banner button:hover {
       background: var(--accent-hover);
+      transform: translateY(-1px);
     }
     
     /* Install PWA banner */
