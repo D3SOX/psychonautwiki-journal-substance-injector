@@ -1479,6 +1479,22 @@
       
       // Refresh stats with cleaned data
       journalData = cleanedData;
+      
+      // Reset all state from previous session
+      modifiedData = null;
+      injectedSubstance = null;
+      validatedSubstanceName = null;
+      currentValidation = null;
+      
+      // Reset input fields
+      customSubstance.value = '';
+      
+      // Reset UI elements
+      validationStatus.classList.add('hidden');
+      injectionPreview.classList.add('hidden');
+      injectBtn.disabled = true;
+      downloadCard.classList.add('hidden');
+      
       const counts = getSubstanceCounts(journalData);
       renderStats(counts, statsList, null, journalData);
       
