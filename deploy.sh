@@ -2,16 +2,30 @@
 
 # FTP Deployment Script
 #
+# Password retrieval priority:
+#   1. .env file (FTP_PASSWORD=...)
+#   2. Environment variable (FTP_PASSWORD=...)
+#   3. Interactive prompt
+#
 # Usage:
 #   ./deploy.sh
-#   FTP_PASSWORD=yourpassword ./deploy.sh
 
 set -e  # Exit on error
 
 FTP_HOST="d3sox.lima-ftp.de"
 FTP_USER="d3sox"
 FTP_REMOTE_DIR="/d3sox.lima-city.de/journal-substance-injector/"
-FTP_PASSWORD="${FTP_PASSWORD:-}"  # Use environment variable if set, otherwise will prompt
+
+# Load .env file if it exists
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/.env"
+    set +a
+fi
+
+FTP_PASSWORD="${FTP_PASSWORD:-}"  # Use from .env, environment variable, or prompt
 
 # Colors for output
 GREEN='\033[0;32m'
