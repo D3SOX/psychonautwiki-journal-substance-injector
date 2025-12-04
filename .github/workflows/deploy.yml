@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  push:
+    paths:
+      - 'index.html'
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version in sw.js
+        run: |
+          # Extract current version number
+          CURRENT_VERSION=$(grep -oP "substance-injector-v\K\d+" sw.js)
+          NEW_VERSION=$((CURRENT_VERSION + 1))
+          
+          # Update version in sw.js
+          sed -i "s/substance-injector-v${CURRENT_VERSION}/substance-injector-v${NEW_VERSION}/g" sw.js
+          
+          echo "Bumped version from v${CURRENT_VERSION} to v${NEW_VERSION}"
+
+      - name: Commit version bump
+        run: |
+          git add sw.js
+          git diff --staged --quiet || git commit -m "Bump version to v$(grep -oP 'substance-injector-v\K\d+' sw.js)"
+          git push || echo "No changes to commit or push failed"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: Deploy via FTP
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh
+
