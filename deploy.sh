@@ -1,11 +1,15 @@
 #!/bin/bash
 
-# FTP Deployment Script
+# FTP/FTPS Deployment Script
 #
 # Password retrieval priority:
 #   1. .env file (FTP_PASSWORD=...)
 #   2. Environment variable (FTP_PASSWORD=...)
 #   3. Interactive prompt
+#
+# FTPS support:
+#   Set USE_FTPS=yes in .env or environment to enable FTPS (default: yes)
+#   Set USE_FTPS=no to disable FTPS and use plain FTP
 #
 # Usage:
 #   ./deploy.sh
@@ -26,6 +30,7 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
 fi
 
 FTP_PASSWORD="${FTP_PASSWORD:-}"  # Use from .env, environment variable, or prompt
+USE_FTPS="${USE_FTPS:-yes}"  # Use FTPS by default (set to "no" to disable)
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -64,14 +69,30 @@ if [ -z "$FTP_PASSWORD" ]; then
 fi
 
 # Deploy using lftp
-if lftp -c "
+if [ "$USE_FTPS" = "yes" ]; then
+    echo -e "${YELLOW}Using FTPS (secure connection)...${NC}"
+    LFTP_CMD="
+set ftp:ssl-allow yes
+set ftp:ssl-force yes
+open -u $FTP_USER,$FTP_PASSWORD $FTP_HOST
+cd $FTP_REMOTE_DIR
+lcd $(pwd)
+mput $FILES_STR
+bye
+"
+else
+    echo -e "${YELLOW}Using plain FTP (insecure connection)...${NC}"
+    LFTP_CMD="
 set ftp:ssl-allow no
 open -u $FTP_USER,$FTP_PASSWORD $FTP_HOST
 cd $FTP_REMOTE_DIR
 lcd $(pwd)
 mput $FILES_STR
 bye
-"; then
+"
+fi
+
+if lftp -c "$LFTP_CMD"; then
     echo -e "${GREEN}✓ Deployment successful!${NC}"
 else
     echo -e "${RED}✗ Deployment failed!${NC}"
