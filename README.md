@@ -15,7 +15,7 @@ This project was created to protest the Journal app [abandoning its FOSS roots f
 - **Smart Injection**: Calculates minimum entries needed to reach top 3
 - **Substance Validation**: Optional validation via PsychonautWiki API to verify substance names
 - **Non-Destructive**: Fake entries are clearly tagged with `[INJECTED_BY_SUBSTANCE_INJECTOR]` and will be automatically replaced when you run the tool again
-- **Transparent**: Source code is not obfuscated — view it with `Ctrl+U`
+- **Transparent**: Source code is licensed under the GPLv3 and is available here.
 
 ## How to Use
 
