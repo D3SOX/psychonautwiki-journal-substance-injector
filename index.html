@@ -276,6 +276,18 @@
       display: none !important;
     }
     
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
     .status-message {
       text-align: center;
       padding: 1rem;
@@ -732,19 +744,21 @@
     <div class="card hidden" id="substanceCard">
       <div class="card-title">2. Select Substance</div>
       <div class="substance-select">
-        <select id="substanceDropdown">
+        <label for="substanceDropdown" class="visually-hidden">Select substance from journal</label>
+        <select id="substanceDropdown" aria-label="Select substance from journal">
           <option value="">-- Select from journal --</option>
         </select>
         <span class="or-divider">or</span>
-        <input type="text" id="customSubstance" placeholder="Type custom substance" autocomplete="off">
+        <label for="customSubstance" class="visually-hidden">Type custom substance name</label>
+        <input type="text" id="customSubstance" placeholder="Type custom substance" autocomplete="off" aria-label="Type custom substance name">
       </div>
       <p class="info-text">Select a substance to see how many entries will be injected to reach the top 3.</p>
       <div class="validation-toggle" id="validationToggle">
-        <label class="toggle-switch">
-          <input type="checkbox" id="enableValidation">
+        <label class="toggle-switch" for="enableValidation">
+          <input type="checkbox" id="enableValidation" aria-labelledby="validationLabel">
           <span class="toggle-slider"></span>
         </label>
-        <span class="toggle-label">
+        <span class="toggle-label" id="validationLabel">
           <strong>Validate via PsychonautWiki</strong><br>
           Verify substance names and correct casing. Requires internet.
         </span>
